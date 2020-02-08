@@ -1,0 +1,58 @@
+This HTML uses <A href="http://cutestrap.com">Cutestrap CSS http://cutestrap.com</A> you can make this page look like anything, edit index.php to use other CSS. 
+copy this file to learnmore.html and edit it. 
+
+<section class="wrapper -thin">
+   <div class="ta-center grid" style="column-gap: var(--rhythm-half)">
+    <div>
+      <a href="/melee/index.php/login" class="button -block">Login</a>
+    </div>
+    <div>
+      <a href="/melee/index.php" class="button -outlined -block">Main Page</a>
+    </div>
+  </div>
+</section>
+
+
+<section class="wrapper -thin">
+  <h3>Subscribing:</h3>
+  <p>
+    Send an email to the list email address with the word "<b>subscribe</b>" in the subject line. 
+    list address: <b>listname@listdomain.foo</b>.
+  </p>
+
+  <h3>Un-Subscribing:</h3>
+  <p>
+    Send an email to the list email address with the word
+    "<b>unsubscribe</b>" in the subject line. 
+  </p>
+  <h3>Get a password</h3>
+  <p>
+    If you want to login to this web interface:
+    edit your name, and manage the very few settings available: 
+    Send an email to the list email address with the phrase "<b>passwordreset</b>" (as one word, as shown) in the subject line. 
+    The list will generate a password and email it to you. 
+  </p>
+  <h3>Fortune</h3>
+  <p>
+    Send an email to the list email address with the word "<b>fortune</b>"
+    and list will read your fortune. It's a great way to test the list and
+    your email / status. Helps keep the "is this list working" emails down.  
+  </p>
+  <h3>Rules</h3>
+  <p>
+    Mailing list rules vary list to list. In general, if the list has to act
+    like there are rules, you get kicked off the list. Be gracious and
+    forgiving. If not, you had better be right. 
+  </p>
+
+  <h4>Praise / Complains / Support</h4>
+  <p>
+    <ul>
+      <li>If a member and apropos for the list: Send it there.
+      <li>If not member or not apropos for the list: Send it to <a href='mailto:listadmin@listdomain.foo'>listadmin@listdomain.foo</a>
+      which is a spam sink-hole and is seldom checked.  
+      <li>This mailing list is running on: <a href="/melee/index.php/melee.html">MELEE</a>
+    </ul>  
+  </p>
+</section>
+

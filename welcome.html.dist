@@ -1,0 +1,35 @@
+
+This HTML uses <A href="http://cutestrap.com">Cutestrap CSS http://cutestrap.com</A> you can make this page look like anything, edit index.php to use other CSS. 
+copy this file to welcome.html and edit it. 
+
+<section class=wrapper class="wrapper -wide ta-center">
+<h1 class="title">
+  CHUGALUG - or your list name
+</h1>
+<h3 class="title">
+  Chattanoga Unix Gnu Android Linux Users Group - or your list desciption
+</h3>
+<p>
+This mailing list is a traditional email list. The "Login" is to allow
+web viewing of your information, and some limited editing of settings, 
+You can subscribe, unsubscribe, get list stats and verify your
+status via email.
+</p>
+</section>
+
+<section class="wrapper -thin">
+  <h3>How to join? </h3>
+  <p>
+    Send an email to the list with the word "subscribe" in the subject line. 
+    The list address is <b>listname@listdomain.foo</b>. 
+   </p>
+  <div class="ta-center grid" style="column-gap: var(--rhythm-half)">
+    <div>
+      <a href="/melee/index.php/login" class="button -block">Login</a>
+    </div>
+    <div>
+      <a href="/melee/index.php/learnmore.html" class="button -outlined -block">Learn More</a>
+    </div>
+  </div>
+</section>
+
