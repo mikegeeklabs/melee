@@ -4,6 +4,9 @@
 As defined: Melee - a confused mass of people.
 "the melee of people that was always thronging the streets"
 
+Read/use the plain text version of this file for better formatting and
+cut-pastable examples. 
+
 This was created by a sysadmin/programmer that runs the CHUGALUG.org mailing
 list that had been running mailman 1 through mailman 2.1 for 20+ years
 and was frustrated by mailman 3. It's not idiot proof, but if you have basic
