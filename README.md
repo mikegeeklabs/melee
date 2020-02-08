@@ -117,6 +117,7 @@ Send emails to the list with a subject line of 'fortune' and verify
 your DKIM and SPF records in the headers received. Good examples:
 
   Received-SPF: pass (google.com: domain of chugalug@chugalug.org designates 2600:3c02::f03c:92ff:fe2c:3321 as permitted sender)
+
   DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=chugalug.org; s=chugalug2020; t=1581174172; bh=SBYVAbd6Gci/1Gk76pk/dokVULvBFk3muLSvhGpnUD8=; h=To:Subject:From:Reply-To:List-ID:List-Unsubscribe:List-Post:
 	 List-Help:List-Subscribe:Date:From; b=sIbOboUpUBJ3mvaQlqyik3h17RioaOfapP1ImoZvdB6em2dC1D8JukNPQE9dvlDie
 	 ePAXV3RprP9RJ7uXERXgf50LGYzyXrYLw88Rei3txTRPUZpzeX07X4CYYQjZxc55J1
