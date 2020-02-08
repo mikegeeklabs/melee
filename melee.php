@@ -22,9 +22,9 @@ function leachemails() {
         $subject = $headers['Subject'];
         #this will evolve:
         $content = $mailrawbody;
-        #if (base64_decode($mailrawbody, true)) {
-        #    $content = base64_decode($content, true);
-        #};
+        if (base64_decode($mailrawbody, true)) {
+            $content = base64_decode($content, true);
+        };
         preg_match_all("/[\._a-zA-Z0-9-]+@[\._a-zA-Z0-9-]+/i", $from, $m); #borrowed, may not be great.
         $cleanfrom = strtolower(dtemail($m[0][0]));
         print "From: $from\nClean From: $cleanfrom\nTo: $to\nSubject: $subject\nContent:\n\n";
@@ -137,7 +137,7 @@ function leachemails() {
                 $q = "insert into members(email,name,level,created) values ('$cleanfrom','$from','4',now())";
                 runsql("$q");
                 $wcontent = "\n\nWelcome $cleanfrom,\n\nYou were auto-subscribed to the $emailfrom mailing list.\n\nYou may have to be on the list a while before you can post or reply. Depends on the whims of the admins.\n\nBe gracious, trim your replies, drunk/high posting may be encouraged or discouraged. Read the list rules and read a few posts for a clue.\n\n$help\n\n$fortune";
-                sendemail("$emailfrom", "$cleanfrom", "[$listname] Welcome", '', $wcontent);
+                sendemail("$emailfrom", "$cleanfrom", "[$listname] Welcome", '', $optheaders, $wcontent);
             };
             imap_delete($mbox, $mid);
         };
@@ -204,8 +204,8 @@ function parse_rfc822_headers(string $header_string):
             exit;
         }
         #You may want to do something like this for debugging.. }
-        #print "backup to ../chugacopy\n" ;
-        #system("cat /var/spool/mail/chugalug >>/var/spool/mail/chugacopy") ;
+        print "backup to ../chugacopy\n" ;
+        system("cat /var/spool/mail/chugalug >>/var/spool/mail/chugacopy") ;
         error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
         include ("glass-core.php");
         include ("sendemail.php");
