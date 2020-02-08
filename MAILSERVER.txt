@@ -68,6 +68,8 @@ My files, minus private keys as an example:
 
 And I did not use "trustedhosts" as my only trusted host is localhost. 
 
+Adding your public keys to DNS per the examples and also create SPF
+records... 
 
 
 
