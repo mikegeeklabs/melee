@@ -1,0 +1,73 @@
+
+Not going inti a lot of details, because everyone's mail server config will
+be different. I'm using Postfix for SMTP, Dovecot for IMAP using
+/var/spool/mail/* files instead of .maildirs because the mail files should
+stay small and this is a starting config. May change. 
+
+Useful thing for POSTFIX;
+
+in /etc/postfix/master.conf
+
+   #smtp      inet  n       -       y       -       -       smtpd -v
+    smtp      inet  n       -       y       -       -       smtpd 
+
+using the line with "smtpd -v" and doing a postfix reload gives gloriously
+details verbose data in /var/logs/mail.log  You don't need this unless
+things are b0rken.
+
+base config in /etc/postfix/main.cf
+
+   milter_default_action = accept
+   milter_protocol = 2
+   smtpd_milters = inet:localhost:8899
+   non_smtpd_milters = $smtpd_milters
+
+makes postfix talk to a mail filter (milter) on port 8899
+You may also need to modify:
+
+   mydestination = $myhostname, cybrmall.com, li2103-166.members.linode.com, localhost.members.linode.com,localhost,chugalug.org
+   mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+
+OpenDKIM can be simple or complex. This page is golden: https://wiki.debian.org/opendkim
+
+Example for a single domain: 
+
+   # Sign for example.com with key in /etc/dkimkeys/dkim.key using
+   # selector '2007' (e.g. 2007._domainkey.example.com)
+   Domain			cybrmall.com
+   KeyFile		/etc/dkimkeys/mail2020.private
+   Selector		mail2020
+
+Or if using multiple domains on the same server, create keys like: 
+
+   sudo --user opendkim opendkim-genkey --directory=/etc/dkimkeys --domain=yourdomain.com --selector=2020 --nosubdomains
+   sudo --user opendkim opendkim-genkey --directory=/etc/dkimkeys --domain=chugalug.org --selector=chugalug2020 --nosubdomains
+   sudo --user opendkim opendkim-genkey --directory=/etc/dkimkeys --domain=geeklabs.com --selector=geeklabs2020 --nosubdomains
+
+   # Specify the list of keys
+   KeyTable file:/etc/dkimkeys/keytable
+   # Match keys and domains. To use regular expressions in the file, use refile: instead of file:
+   SigningTable refile:/etc/dkimkeys/signingtable 
+   # Match a list of hosts whose messages will be signed. By default, only localhost is considered as internal host.
+   #InternalHosts refile:/etc/dkimkeys/trustedhosts 
+
+My files, minus private keys as an example:
+
+   #/etc/dkimkeys/keytable example:
+   mail2020._domainkey.cybrmall.com cybrmall.com:mail2020:/etc/dkimkeys/mail2020.private
+   chugalug2020._domainkey.chugalug.org chugalug.org:chugalug2020:/etc/dkimkeys/chugalug2020.private
+   geeklabs2020._domainkey.chugalug.org geeklabs.com:geeklabs2020:/etc/dkimkeys/geeklabs2020.private
+
+   #/etc/dkimkeys/signingtable example:
+   #  Domain example.com
+   #  *@example.com mail._domainkey.example.com
+   #  # You can specify multiple domains
+   #  # Example.net www._domainkey.example.net 
+   *@cybrmall.com mail2020._domainkey.cybrmall.com
+   *@chugalug.org chugalug2020._domainkey.chugalug.org
+
+And I did not use "trustedhosts" as my only trusted host is localhost. 
+
+
+
+
