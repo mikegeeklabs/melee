@@ -1,0 +1,20 @@
+<?php
+$dbserver = 'localhost' ;    # Your MariaDB/MYSQL Server. 
+$dblogin = 'chugalug' ;      # the login to your database server.
+$dbpasswd = 'dbpassword' ; # the password to your database server
+$database = 'chugalug' ;     # the database
+$listname = 'chugalug' ;     # the name of the list. In subject line as[$listname]
+$webroot = '/melee' ;        # if on a webserver using the web interface, the relative path from the website
+$shellroot = '/home/domains/chugalug.org/website/melee/' ; #actual path to this directory. 
+$timezonetext = 'America/New_York' ; # the TZ text of the mailing list. use tzselect to determin
+$timezonenumber = '-5:00' ;      # a numeric offset for timezone 
+$emailserver = 'localhost' ;     # IMAP Server
+$emaillogin = 'chugalug' ;       # IMAP Login, probably the list name.. 
+$emailpasswd = 'yourimappassword' ;  # IMAP password
+$emailfrom = 'chugalug@chugalug.org' ;   #List email address. email will be from here. 
+$maxsize = 10042 ;           # Max email size, in bytes.  
+#internationalization settings - not used much yet. 
+$thousands = ',' ; 
+$decimals = '.' ; 
+$defaultlang = 'en' ; 
+?>
