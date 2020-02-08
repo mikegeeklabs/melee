@@ -112,8 +112,10 @@ function leachemails() {
             if ($send) {
                 runsql("update members set sent = sent + 1 where uniq = '$sender[uniq]'"); #increment the sent mail counter
                 $members = gaaafm("select * from members where status = 'active' and level > 0 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+                $storedfrom = $from ; 
                 foreach ($members as $member) {
                     #print "Sending to: $member[email] $member[name]\n" ;
+                    if($cleanfrom == '$member[email]') { $from = $emailfrom ; } else { $from = $storedfrom ; } ; 
                     runsql("update members set recv = recv + 1 where uniq = '$member[uniq]'"); #increment the recv mail counter
                     sendemail("$from", "$member[email]", "$subject", $contenttype, $optheaders, $content);
                 };
