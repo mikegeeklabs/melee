@@ -115,14 +115,14 @@ function leachemails() {
                 $storedfrom = $from ; 
                 foreach ($members as $member) {
                     #print "Sending to: $member[email] $member[name]\n" ;
-                    if($cleanfrom == '$member[email]') { $from = $emailfrom ; } else { $from = $storedfrom ; } ; 
+                    #if($cleanfrom == '$member[email]') { $from = $emailfrom ; } else { $from = $storedfrom ; } ; 
                     runsql("update members set recv = recv + 1 where uniq = '$member[uniq]'"); #increment the recv mail counter
                     sendemail("$from", "$member[email]", "$subject", $contenttype, $optheaders, $content);
                 };
             };
             imap_delete($mbox, $mid);
-        } elseif ($cleanfrom == 'mailer-daemon@cybrmall.com') {
-            print "cleanfrom: $cleanfrom  indicates a bounce?\n\n";
+        } elseif (preg_match("/mailer-deamon/", strtolower($cleanfrom), $m) or preg_match("/undelivered/", strtolower($subject), $m)) {
+            print "cleanfrom: $cleanfrom  or $subject indicates a bounce?\n\n";
             #can we find a bounce original email address in all cases?
             $maybe = findoriginal($content);
             print "Original may have been: $maybe    updating bounce counter if exists\n\n";
@@ -206,8 +206,8 @@ function parse_rfc822_headers(string $header_string):
             exit;
         }
         #You may want to do something like this for debugging.. }
-        print "backup to ../chugacopy\n" ;
-        system("cat /var/spool/mail/chugalug >>/var/spool/mail/chugacopy") ;
+        #print "backup to ../chugacopy\n" ;
+        #system("cat /var/spool/mail/chugalug >>/var/spool/mail/chugacopy") ;
         error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
         include ("glass-core.php");
         include ("sendemail.php");
