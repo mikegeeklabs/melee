@@ -33,7 +33,7 @@ function leachemails() {
         $help = "If in the subject line, the following words do magic:\n\nsubscribe - subscribe to the list\nunsubscribe - get me off of this list. It deletes your record and you can resubsribe\npasswordreset - get a password to the web interface.\nhelp - if only word on subject line, you get this email with helpful commands.\nfortune - check the list function and my stats and list stats and give you a fortune\n\"list working\" - same as fortune, cuts down on people asking if the list is working and it sending upmteen thousand emails about it.\n";
         if ($sender['uniq'] > 0) {
             #=========================CHANGE RECV REQUIREMENT ASAP!!!
-            print "MEMBER $sender[uniq] $sender[name] SENT US EMAIL     $size bytes !!!\n\n";
+            print "MEMBER $sender[uniq] $sender[name] SENT US EMAIL\nSubject; $subject              $size bytes !!!\n\n";
             $send = true;
             $info = "\nName: $sender[name]\nEmail: $sender[email]\nMember since: $sender[created]\nKarma Level:$sender[level] Sent: $sender[sent] Received: $sender[recv] Bounced: $sender[bounced]\n";
             list($mems, $recv, $sent) = gafm("select count(uniq),sum(recv),sum(sent) from members");
@@ -110,6 +110,8 @@ function leachemails() {
                 $subject = "[$listname] " . $subject . "\n";
             }
             if ($send) {
+                print "Sleeping for 5...ctrl-c to abort\n" ; 
+                sleep(8) ; 
                 runsql("update members set sent = sent + 1 where uniq = '$sender[uniq]'"); #increment the sent mail counter
                 $members = gaaafm("select * from members where status = 'active' and level > 0 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
                 $storedfrom = $from ; 
