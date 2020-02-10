@@ -41,7 +41,8 @@ function leachemails() {
             #=========================CHANGE RECV REQUIREMENT ASAP!!!
             print "MEMBER $sender[uniq] $sender[name] SENT US EMAIL\nSubject; $subject              $size bytes !!!\n\n";
             $send = true;
-            $info = "\nName: $sender[name]\nEmail: $sender[email]\nMember since: $sender[created]\nKarma Level:$sender[level] Sent: $sender[sent] Received: $sender[recv] Bounced: $sender[bounced]\n";
+            if($sender['digest'] > 0) { $digtext = 'Daily' ; } else { $digtext = 'No' ; } ; 
+            $info = "\nName: $sender[name]\nEmail: $sender[email]\nMember since: $sender[created]\nKarma Level: $sender[level] Sent: $sender[sent] Received: $sender[recv] Bounced: $sender[bounced]  Digest: $digtext\n";
             list($mems, $recv, $sent) = gafm("select count(uniq),sum(recv),sum(sent) from members");
             #globals:
             $stats = "\n\n$mems active members have sent $sent emails to the list that generated $recv emails, not counting administrative emails.";

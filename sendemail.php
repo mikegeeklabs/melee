@@ -57,13 +57,12 @@ function sendemail($fromemail,$email, $subject, $contenttype, $optheaders,$messa
         $headers.= "Content-Type: $contenttype\n";
     } ; 
     $headers.= "\r\n\r\n"; #break between headers and non-mime body
+    
     if (mail($email, $subject, $message . "\n\r", $headers, "-f $emailfrom" )) {
         print "Sent to $email\n" ; 
     } else {
         print "Could not send to $email\n" ; 
     } ; 
-
-
 
 };
 
