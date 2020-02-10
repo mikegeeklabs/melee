@@ -11,6 +11,9 @@ $timezonenumber = '-5:00' ;      # a numeric offset for timezone
 $emailserver = 'localhost' ;     # IMAP Server
 $emaillogin = 'chugalug' ;       # IMAP Login, probably the list name.. 
 $emailpasswd = 'yourimappassword' ;  # IMAP password
+$digestemailserver = 'localhost' ;     # IMAP Server for Digest Source
+$digestemaillogin = 'chugalug' ;       # IMAP Login, probably the list name.. 
+$digestemailpasswd = 'yourimappassword' ;  # IMAP password
 $emailfrom = 'chugalug@chugalug.org' ;   #List email address. email will be from here. 
 $maxsize = 10042 ;           # Max email size, in bytes.  
 #internationalization settings - not used much yet. 

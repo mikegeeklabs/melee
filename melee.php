@@ -30,7 +30,13 @@ function leachemails() {
         print "From: $from\nClean From: $cleanfrom\nTo: $to\nSubject: $subject\nContent:\n\n";
         #step 1, see if they are in members.
         $sender = gaafm("select * from members where lower(email) = '$cleanfrom'  limit 1");
-        $help = "If in the subject line, the following words do magic:\n\nsubscribe - subscribe to the list\nunsubscribe - get me off of this list. It deletes your record and you can resubsribe\npasswordreset - get a password to the web interface.\nhelp - if only word on subject line, you get this email with helpful commands.\nfortune - check the list function and my stats and list stats and give you a fortune\n\"list working\" - same as fortune, cuts down on people asking if the list is working and it sending upmteen thousand emails about it.\n";
+        $help = "If in the subject line, the following words do magic:\n\nsubscribe - subscribe to the list\nunsubscribe - get me off of this list. It deletes your record and you can resubsribe\npasswordreset - get a password to the web interface.\ndigest - if only word on subject line, toggles digest mode\nhelp - if only word on subject line, you get this email with helpful commands.\nfortune - check the list function and my stats and list stats and give you a fortune\n\"list working\" - same as fortune, cuts down on people asking if the list is working and it sending upmteen thousand emails about it.\n";
+
+#            imap_delete($mbox, $mid);
+#            imap_expunge($mbox); #Do It!
+#            imap_close($mbox);
+
+
         if ($sender['uniq'] > 0) {
             #=========================CHANGE RECV REQUIREMENT ASAP!!!
             print "MEMBER $sender[uniq] $sender[name] SENT US EMAIL\nSubject; $subject              $size bytes !!!\n\n";
@@ -40,9 +46,9 @@ function leachemails() {
             #globals:
             $stats = "\n\n$mems active members have sent $sent emails to the list that generated $recv emails, not counting administrative emails.";
             #size sanity check and reply
-            if ($size > $maxsize and $sender['level'] < 100) {
+            if ($size > $maxsize and $sender['level'] < 500) {
                 print "$size > $maxsize - refused\n";
-                $wcontent = "\n\nDear $cleanfrom,\n\nYour message was refuse because it was too large.\n\nYour message was $size bytes and the limit is $maxsize bytes\n\n$stats";
+                $wcontent = "\n\nDear $cleanfrom,\n\nYour message was refused because it was too large.\n\nSubject; $subject\n\nYour message was $size bytes and the limit is $maxsize bytes\n\n\n\n\n$stats";
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] Message size exceeds limit.", '', $optheaders, $wcontent);
                 $send = false;
             }
@@ -79,6 +85,24 @@ function leachemails() {
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] reset $cleanfrom ", '', $optheaders, $wcontent);
                 $send = false;
             };
+            if (preg_match("/^digest$/", strtolower(dt($subject)), $m)) {
+                print "Digest Toggle!!!\n\n";
+                #auto subcribe for now..
+                $fortune = fortune();
+                if($sender['digest'] == '0') { 
+                    $q = "update members set digest = '1' where uniq = '$sender[uniq]'";
+                    $wcontent = "Digest Mode Enabled. Currently Daily Only\n\n$stats\n\n$fortune" ; 
+                    runsql("$q");
+                    sendemail("$emailfrom", "$cleanfrom", "[$listname] digest mode toggled ON ", '', $optheaders, $wcontent);
+                } ; 
+                if($sender['digest'] == '1') { 
+                    $q = "update members set digest = '0' where uniq = '$sender[uniq]'";
+                    $wcontent = "Digest Mode Disabled.\n\n$stats\n\n$fortune" ; 
+                    runsql("$q");
+                    sendemail("$emailfrom", "$cleanfrom", "[$listname] digest toggled OFF ", '', $optheaders, $wcontent);
+                } ; 
+                $send = false;
+            };
             if (preg_match("/fortune/", strtolower(dt($subject)), $m) or preg_match("/list working/", strtolower(dt($subject)), $m)) {
                 # a way to test the list is working
                 print "Fortune!!!\n\n";
@@ -113,7 +137,7 @@ function leachemails() {
                 print "Sleeping for 5...ctrl-c to abort\n" ; 
                 sleep(8) ; 
                 runsql("update members set sent = sent + 1 where uniq = '$sender[uniq]'"); #increment the sent mail counter
-                $members = gaaafm("select * from members where status = 'active' and level > 0 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+                $members = gaaafm("select * from members where status = 'active' and level > 0 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
                 $storedfrom = $from ; 
                 foreach ($members as $member) {
                     #print "Sending to: $member[email] $member[name]\n" ;
@@ -147,8 +171,12 @@ function leachemails() {
         };
     };
     #cleanup - items deleted as parsed.
+    sleep(1) ; 
     imap_expunge($mbox); #Do It!
+    sleep(1) ; 
     imap_close($mbox);
+    sleep(1) ; 
+
 };
 function parse_rfc822_headers(string $header_string):
     array {
@@ -208,8 +236,8 @@ function parse_rfc822_headers(string $header_string):
             exit;
         }
         #You may want to do something like this for debugging.. }
-        #print "backup to ../chugacopy\n" ;
-        #system("cat /var/spool/mail/chugalug >>/var/spool/mail/chugacopy") ;
+#        print "backup to ../chugacopy\n" ;
+#        system("cat /var/spool/mail/chugalug >>/var/spool/mail/chugacopy") ;
         error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
         include ("glass-core.php");
         include ("sendemail.php");
