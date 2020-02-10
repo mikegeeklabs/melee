@@ -10,6 +10,7 @@ function createdigest() {
     echo "You have $numEmails in your INBOX\n";
     $now = date("Y-m-d");
     $DIGEST = "$now $listname Digest: $numEmails messages\n====================================\n\n";
+    if($numEmails > 0) {
     for ($mid = 1;$mid < $numEmails + 1;$mid++) {
         $mailrawheader = imap_fetchbody($mbox, $mid, "0");
         $mailraw = imap_fetchbody($mbox, $mid, "");
@@ -105,7 +106,7 @@ function createdigest() {
     sleep(1);
     imap_close($mbox);
     #    sleep(1) ;
-    
+    } ; 
 };
 function parse_rfc822_headers(string $header_string):
     array {
