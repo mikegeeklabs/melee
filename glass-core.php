@@ -351,6 +351,16 @@ function nff($number) {
     };
     return $number;
 };
+function intnff($number) {
+    global $lang, $thousands, $decimals;
+    $places = 0;
+    if ($thousands != ',' or $decimals != '.') {
+        $number = number_format($number, $places, "$decimals", "$thousands");
+    } else {
+        $number = number_format($number, $places, '.', ',');
+    };
+    return $number;
+};
 function gllog($log, $what) {
     global $portal, $login, $fromip;
     $dir = @fopen("logs", "r");

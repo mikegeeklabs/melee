@@ -38,7 +38,7 @@ function main() {
    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <meta name="apple-touch-fullscreen" content="yes">
   <title>melee $listname control</title>
-  <meta name="description" content="ring-u plug and play business phone system">
+  <meta name="description" content="$listname MELEE Mail List Engine Web Interface">
   <link rel="stylesheet" href="$webroot/css/dist/css/cutestrap.min.css">
 </head>
 <body style="background-color:#ffffff;color:#000000;">

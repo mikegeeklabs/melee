@@ -1,6 +1,6 @@
 <?php
 function leachemails() {
-    global $db;
+    global $db, $lang,$thousands,$decimals  ;
     include ('settings.inc');
     $db = glconnect();
     print "Connecting to $emailserver as $emaillogin\n";
@@ -39,11 +39,14 @@ function leachemails() {
 
         if ($sender['uniq'] > 0) {
             #=========================CHANGE RECV REQUIREMENT ASAP!!!
-            print "MEMBER $sender[uniq] $sender[name] SENT US EMAIL\nSubject; $subject              $size bytes !!!\n\n";
+            print "MEMBER $sender[uniq] $sender[name] SENT US EMAIL\nSubject; $subject              " . intnff($size) . " bytes !!!\n\n";
             $send = true;
             if($sender['digest'] > 0) { $digtext = 'Daily' ; } else { $digtext = 'No' ; } ; 
+            $sender['sent'] = intnff($sender['sent']) ; 
+            $sender['recv'] = intnff($sender['recv']) ; 
             $info = "\nName: $sender[name]\nEmail: $sender[email]\nMember since: $sender[created]\nKarma Level: $sender[level] Sent: $sender[sent] Received: $sender[recv] Bounced: $sender[bounced]  Digest: $digtext\n";
             list($mems, $recv, $sent) = gafm("select count(uniq),sum(recv),sum(sent) from members");
+            $mems = intnff($mems) ; $recv = intnff($recv) ; $sent = intnff($sent) ;             
             #globals:
             $stats = "\n\n$mems active members have sent $sent emails to the list that generated $recv emails, not counting administrative emails.";
             #size sanity check and reply
@@ -82,7 +85,7 @@ function leachemails() {
                 $passwdhash = password_hash($passwd, PASSWORD_BCRYPT, $options);
                 $q = "update members set passwd = '$passwdhash' where uniq = '$sender[uniq]'";
                 runsql("$q");
-                $wcontent = "\n\nMagic word requested.\n\nYour new magic word is:   $passwd\n$info\nAll generic disclaimers apply; do not use this anywhere else. If possible, change this when you login.\n\n\n\nThis was sent via plain text email and may already be comprimised. Not much can be done with it, but if you notice your mailing lists settings are strange, agents from the planet Bogon may be messing with you. Only you can keep your mailing list safe from the Bogons. Any insult or injury to Bogons was strictly intentional. The $listname mailing list does not need wild Bogons creating havoc. That's usually internally self-generated and best left to members of the mailing list. All of this nonsense at the bottom of this message is just noise to help get this past the heuristic gatekeeps that guard us from the worst of ourselves. No actual semantic meaning of value should be infered. Have a sparkly day.\n\n -Respectfully submited, the $listname mailing list.\n\n\n$fortune\n";
+                $wcontent = "\n\nMagic word requested.\n\nYour new magic word is:   $passwd\n$info\nAll generic disclaimers apply; do not use this anywhere else. If possible, change this when you login.\n\n\n\nThis was sent via plain text email and may already be comprimised. Not much can be done with it, but if you notice your mailing lists settings are strange, agents from the planet Bogon may be messing with you. Only you can keep your mailing list safe from the Bogons. Any insult or injury to Bogons was strictly intentional. The $listname mailing list does not need wild Bogons creating havoc. That's usually internally self-generated and best left to members of the mailing list. All of this nonsense at the bottom of this message is just noise to help get this past the heuristic gatekeeps that guard us from the worst of ourselves. No actual semantic meaning of value should be infered. Have a sparkly day.\n\n -Respectfully submited, the $listname mailing list.\n$help\n\n$fortune\n";
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] reset $cleanfrom ", '', $optheaders, $wcontent);
                 $send = false;
             };
@@ -165,7 +168,7 @@ function leachemails() {
                 #auto subcribe for now..
                 $q = "insert into members(email,name,level,created) values ('$cleanfrom','$from','4',now())";
                 runsql("$q");
-                $wcontent = "\n\nWelcome $cleanfrom,\n\nYou were auto-subscribed to the $emailfrom mailing list.\n\nYou may have to be on the list a while before you can post or reply. Depends on the whims of the admins.\n\nBe gracious, trim your replies, drunk/high posting may be encouraged or discouraged. Read the list rules and read a few posts for a clue.\n\n$help\n\n$fortune";
+                $wcontent = "\n\nWelcome $cleanfrom,\n\nYou were auto-subscribed to the $emailfrom mailing list.\n\nYou may have to be on the list a while before you can post or reply. Depends on the whims of the admins.\n\nBe gracious, trim your replies, drunk/high posting may be encouraged or discouraged. Read the list rules and read a few posts for a clue.\n\n$help\n$info\n$fortune";
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] Welcome", '', $optheaders, $wcontent);
             };
             imap_delete($mbox, $mid);
