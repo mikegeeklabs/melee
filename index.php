@@ -102,7 +102,7 @@ if($member['sign'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;
 print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=sign $CHECKED/><span class=\"label\">GPG sign my email</span></label>" ; 
 if($member['encrypt'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
 print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=encrypt $CHECKED/><span class=\"label\">GPG encrypt my email</span></label>" ; 
-print "<label class=\"field\"><textarea name=publickey>$member[publickey]</textarea><span class=\"label\">Public Key</span></label>" ; 
+print "<label class=\"field\"><textarea name=publickey style=\"font-size:small;line-height:100%;font-family:monospace;\">$member[publickey]</textarea><span class=\"label\">Public Key</span></label>" ; 
 print "<input type=submit value='Update' class=button>" ; 
 
 
@@ -112,7 +112,7 @@ print "<input type=submit value='Update' class=button>" ;
         print "<b>$members</b> active members that have sent <b>$sent</b> emails to the list and generated <b>$recv</b> emails, not counting administrative emails.";
         print "</form>" ; 
         $listpublickey = @file_get_contents('publickey.gpg') ; 
-        print "<h5  class='wrapper' style='max-width: 50rem'>List Public GPG Key</h5><center><pre style='max-width: 50rem; font-size:small;text-align:left'>" ; 
+        print "<h5  class='wrapper' style='max-width: 50rem'>List Public GPG Key</h5><center><pre style='max-width: 50rem; font-size:small;line-height:100%;text-align:left'>" ; 
         print "$listpublickey" ; 
         print "</pre></center>" ; 
         
