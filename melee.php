@@ -116,6 +116,13 @@ function leachemails() {
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Fortune - List Check", '', $optheaders, $wcontent);
                 $send = false;
             };
+            if (preg_match("/^bounceme$/", strtolower(dt($subject)), $m)) {
+                # a way to debug message formatting, headers, etc.. without affecting the whole list - this includes the contenttype header
+                print "BOUNCEME!!!\n\n";
+                sendemail("$emailfrom", "$cleanfrom", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
+                #sendemail("$emailfrom", "mike@geeklabs.com", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
+                $send = false;
+            };
             if (preg_match("/^help$/", strtolower(dt($subject)), $m)) {
                 # a way to test the list is working
                 print "HELP!!!\n\n";
