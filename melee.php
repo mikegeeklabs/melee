@@ -74,7 +74,7 @@ function leachemails() {
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] un-subscribe $cleanfrom from $listname", '', $optheaders, $wcontent);
                 $send = false;
             };
-            if (preg_match("/passwordreset/", strtolower(dt($subject)), $m)) {
+            if (preg_match("/^passwordreset$/", strtolower(dt($subject)), $m)) {
                 #maybe this entity wants a new password
                 #this could ba a bad idea.
                 print "Password Reset!!!\n\n";
