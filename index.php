@@ -58,7 +58,7 @@ EOF;
         include ("melee.html");
     };
     if (($mode == 'login' or $submode == 'login') and $level > 1) {
-        $member = gaafm("select uniq as Member,email as Email, name as Name,created as `Member Since`,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt from members where uniq = '$uniq' limit 1");
+        $member = gaafm("select uniq as Member,email as Email, name as Name,created,level,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt from members where uniq = '$uniq' limit 1");
 #        print "<h3>Member</h3><p>This is very very bare... for now. No actual editing yet.</p>";
 #        print glisttable($member);
 if($subsubmode == 'update' or $submode == 'update') { 
@@ -97,11 +97,11 @@ print "<label class=\"field\"><input type=\"text\" name=name id=name value=\"$me
 if($member['digest'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
 print "<label class=\"field\"><input name=digest id=digest type=\"checkbox\" $CHECKED/><span class=\"label\">Digest Mode</span></label>" ; 
 if($member['encrypt'] < 1 and $member['sign'] < 1) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
-print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=none $CHECKED/><span class=\"label\">Neither Sign or Encrypt</span></label>" ; 
+print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=none $CHECKED/><span class=\"label\">Neither Sign or Encrypt (Original text/MIME: Text, Email, Files)</span></label>" ; 
 if($member['sign'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
-print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=sign $CHECKED/><span class=\"label\">GPG sign my email</span></label>" ; 
+print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=sign $CHECKED/><span class=\"label\">GPG sign my email (plain text version only, but readable)</span></label>" ; 
 if($member['encrypt'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
-print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=encrypt $CHECKED/><span class=\"label\">GPG encrypt my email</span></label>" ; 
+print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=encrypt $CHECKED/><span class=\"label\">GPG encrypt my email (plain text version only)</span></label>" ; 
 print "<label class=\"field\"><textarea name=publickey style=\"font-size:small;line-height:100%;font-family:monospace;\">$member[publickey]</textarea><span class=\"label\">Public Key</span></label>" ; 
 print "<input type=submit value='Update' class=button>" ; 
 
