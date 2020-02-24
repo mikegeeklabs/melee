@@ -53,6 +53,7 @@ function leachemails() {
             if ($size > $maxsize and $sender['level'] < 500) {
                 print "$size > $maxsize - refused\n";
                 $wcontent = "\n\nDear $cleanfrom,\n\nYour message was refused because it was too large.\n\nSubject; $subject\n\nYour message was $size bytes and the limit is $maxsize bytes\n\n\n\n\n$stats";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] Message size exceeds limit.", '', $optheaders, $wcontent);
                 $send = false;
             }
@@ -71,6 +72,7 @@ function leachemails() {
                 $q = "delete from members where uniq = '$sender[uniq]'";
                 runsql("$q");
                 $wcontent = "\n\nGoodbye $cleanfrom,\n\nYou were un-subscribed from the $emailfrom mailing list.\n\nYou may resubscribe at any time. \n\n";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] un-subscribe $cleanfrom from $listname", '', $optheaders, $wcontent);
                 $send = false;
             };
@@ -86,6 +88,7 @@ function leachemails() {
                 $q = "update members set passwd = '$passwdhash' where uniq = '$sender[uniq]'";
                 runsql("$q");
                 $wcontent = "\n\nMagic word requested.\n\nYour new magic word is:   $passwd\n$info\nAll generic disclaimers apply; do not use this anywhere else. If possible, change this when you login.\n\n\n\nThis was sent via plain text email and may already be comprimised. Not much can be done with it, but if you notice your mailing lists settings are strange, agents from the planet Bogon may be messing with you. Only you can keep your mailing list safe from the Bogons. Any insult or injury to Bogons was strictly intentional. The $listname mailing list does not need wild Bogons creating havoc. That's usually internally self-generated and best left to members of the mailing list. All of this nonsense at the bottom of this message is just noise to help get this past the heuristic gatekeeps that guard us from the worst of ourselves. No actual semantic meaning of value should be infered. Have a sparkly day.\n\n -Respectfully submited, the $listname mailing list.\n$help\n\n$fortune\n";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] reset $cleanfrom ", '', $optheaders, $wcontent);
                 $send = false;
             };
@@ -96,12 +99,14 @@ function leachemails() {
                 if($sender['digest'] == '0') { 
                     $q = "update members set digest = '1' where uniq = '$sender[uniq]'";
                     $wcontent = "Digest Mode Enabled. Currently Daily Only\n\n$stats\n\n$fortune" ; 
+                    $wcontent = signme($wcontent) ; 
                     runsql("$q");
                     sendemail("$emailfrom", "$cleanfrom", "[$listname] digest mode toggled ON ", '', $optheaders, $wcontent);
                 } ; 
                 if($sender['digest'] == '1') { 
                     $q = "update members set digest = '0' where uniq = '$sender[uniq]'";
                     $wcontent = "Digest Mode Disabled.\n\n$stats\n\n$fortune" ; 
+                    $wcontent = signme($wcontent) ; 
                     runsql("$q");
                     sendemail("$emailfrom", "$cleanfrom", "[$listname] digest toggled OFF ", '', $optheaders, $wcontent);
                 } ; 
@@ -113,6 +118,7 @@ function leachemails() {
                 #auto subcribe for now..
                 $fortune = fortune();
                 $wcontent = "This list is working.\n$info\n$fortune\n\n$stats";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Fortune - List Check", '', $optheaders, $wcontent);
                 $send = false;
             };
@@ -126,9 +132,9 @@ function leachemails() {
             if (preg_match("/^help$/", strtolower(dt($subject)), $m)) {
                 # a way to test the list is working
                 print "HELP!!!\n\n";
-                #auto subcribe for now..
                 $fortune = fortune();
                 $wcontent = "Helpful Commands: $help\nThis list is working.\n$info\n$fortune\n\n$stats";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Fortune - List Check", '', $optheaders, $wcontent);
                 $send = false;
             };
@@ -136,6 +142,7 @@ function leachemails() {
                 print "Redundant Subscripton\n\n";
                 $fortune = fortune();
                 $wcontent = "You are already subscribed to $listname. If this was a mistake, make a more complex subject line.\n\nHelpful Commands: $help\nThis list is working.\n$info\n$fortune\n\n$stats";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Fortune - List Check", '', $optheaders, $wcontent);
                 $send = false;
             };
@@ -176,6 +183,7 @@ function leachemails() {
                 $q = "insert into members(email,name,level,created) values ('$cleanfrom','$from','4',now())";
                 runsql("$q");
                 $wcontent = "\n\nWelcome $cleanfrom,\n\nYou were auto-subscribed to the $emailfrom mailing list.\n\nYou may have to be on the list a while before you can post or reply. Depends on the whims of the admins.\n\nBe gracious, trim your replies, drunk/high posting may be encouraged or discouraged. Read the list rules and read a few posts for a clue.\n\n$help\n$info\n$fortune";
+                $wcontent = signme($wcontent) ; 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname] Welcome", '', $optheaders, $wcontent);
             };
             imap_delete($mbox, $mid);
@@ -189,6 +197,27 @@ function leachemails() {
     sleep(1) ; 
 
 };
+
+
+function signme($content) { 
+#-------------------
+#https://www.php.net/manual/en/ref.gnupg.php
+#very experimental. Messes up mime.. 
+include("settings.inc") ; 
+if(!empty($gnupghome) and !empty($fingerprint)) { 
+    putenv ( "GNUPGHOME=$gnupghome") ;
+    $res = gnupg_init();
+    gnupg_addsignkey($res,"$fingerprint",""); #list gpg fingerpint
+    $signed = gnupg_sign($res, "$content");
+    echo $signed ;
+    $content = $signed ; 
+    $contenttype = '' ; 
+} ; 
+#-------------------
+return $content ; 
+} ; 
+
+
 function parse_rfc822_headers(string $header_string):
     array {
         preg_match_all('/([^:\s]+): (.*?(?:\r\n\s(?:.+?))*)\r\n/m', $header_string, $matches);
@@ -253,4 +282,6 @@ function parse_rfc822_headers(string $header_string):
         include ("glass-core.php");
         include ("sendemail.php");
         leachemails();
+
+
 ?>

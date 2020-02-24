@@ -20,4 +20,6 @@ $maxsize = 10042 ;           # Max email size, in bytes.
 $thousands = ',' ; 
 $decimals = '.' ; 
 $defaultlang = 'en' ; 
+$gnupghome = '/home/chugalug/.gnupg/' ; #if using GPG...
+$fingerprint = 'A7161401320B1A73E7EE0F73E2281DB4AF4615F5' ; 
 ?>
