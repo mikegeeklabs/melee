@@ -273,7 +273,7 @@ function glauth() {
     $name = '';
     $perms = array();
     if (!isset($_SERVER['PHP_AUTH_USER'])) {
-        header("WWW-Authenticate: Basic realm=\"Credentials Please (1)\"");
+        header("WWW-Authenticate: Basic realm=\"use list email address for login\"");
         header('HTTP/1.0 401 Unauthorized');
         print "<META HTTP-EQUIV=\"Refresh\" CONTENT=\"0; URL=$script?\">";
         gllog('auth','0 no user, unauth popup triggered') ; 
@@ -304,7 +304,7 @@ function glauth() {
         #             } ;
         #        };
         if ($level < 1) {
-            header("WWW-Authenticate: Basic realm=\"Credentials Please (2)\"");
+            header("WWW-Authenticate: Basic realm=\"use email address for login\"");
             header('HTTP/1.0 401 Unauthorized');
             print bbf('Error 401') . ' b<hr>' . bbf('You must have a valid login and password to access this system');
             gllog('auth',"4 $posslogin $posspasswd != $passwd level is 0 - reasked to auth ") ; 

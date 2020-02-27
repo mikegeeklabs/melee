@@ -50,6 +50,19 @@ EOF;
     if (empty($mode)) {
         #welcome screen.
         include ("welcome.html");
+
+        list($members, $recv, $sent) = gafm("select count(uniq),sum(recv),sum(sent) from members");
+        $sent = intnff($sent) ; $recv = intnff($recv) ; $members = intnff($members) ; 
+        print "<center><hr><b>$members</b> active members that have sent <b>$sent</b> emails to the list that generated <b>$recv</b> emails</center>";
+
+        $listpublickey = @file_get_contents('publickey.gpg') ; 
+        if(!empty($listpublickey)) { 
+          print "<h5  class='wrapper' style='max-width: 50rem'>List Public GPG Key (not required)</h5><center><pre style='max-width: 50rem; font-size:medium;line-height:100%;text-align:left'>" ; 
+          print "$listpublickey" ; 
+          print "</pre></center>" ; 
+        } ; 
+
+
     };
     if ($mode == 'learnmore.html') {
         include ("learnmore.html");
@@ -59,14 +72,18 @@ EOF;
     };
     if (($mode == 'login' or $submode == 'login') and $level > 1) {
         $member = gaafm("select uniq as Member,email as Email, name as Name,created,level,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt from members where uniq = '$uniq' limit 1");
-#        print "<h3>Member</h3><p>This is very very bare... for now. No actual editing yet.</p>";
-#        print glisttable($member);
+        print '<section class=wrapper class="wrapper -wide ta-center">' ; 
+        print "<a href='$webroot/' class='button -outlined -block'>MELEE Home</A>" ; 
+        print "</section>"  ; 
+
 if($subsubmode == 'update' or $submode == 'update') { 
   $name = dt($_REQUEST['name']) ; #not real efficient, but sure is easy to debug/extend ;)
   runsql("update members set name = '$name' where uniq = '$member[Member]'") ; 
   $name = dt($_REQUEST['name']) ; #not real efficient, but sure is easy to debug/extend ;)
   runsql("update members set name = '$name' where uniq = '$member[Member]'") ; 
-  $publickey = dtless($_REQUEST['publickey']) ;
+#  $publickey = dtless($_REQUEST['publickey']) ;
+  $publickey = $_REQUEST['publickey'] ; #dangerous
+  
   runsql("update members set publickey = '$publickey' where uniq = '$member[Member]'") ; 
   if($_REQUEST['gpgmode'] == 'sign') { 
     runsql("update members set sign = '1', encrypt='0' where uniq = '$member[Member]'") ; 
@@ -99,10 +116,19 @@ print "<label class=\"field\"><input name=digest id=digest type=\"checkbox\" $CH
 if($member['encrypt'] < 1 and $member['sign'] < 1) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
 print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=none $CHECKED/><span class=\"label\">Neither Sign or Encrypt (Original text/MIME: Text, Email, Files)</span></label>" ; 
 if($member['sign'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
-print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=sign $CHECKED/><span class=\"label\">GPG sign my email (plain text version only, but readable)</span></label>" ; 
+print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=sign $CHECKED/><span class=\"label\">GPG/PGP sign my email (plain text version only, but readable)</span></label>" ; 
 if($member['encrypt'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
-print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=encrypt $CHECKED/><span class=\"label\">GPG encrypt my email (plain text version only)</span></label>" ; 
-print "<label class=\"field\"><textarea name=publickey style=\"font-size:small;line-height:100%;font-family:monospace;\">$member[publickey]</textarea><span class=\"label\">Public Key</span></label>" ; 
+print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=encrypt $CHECKED/><span class=\"label\">GPG/PGP encrypt my email (plain text version only)</span></label>" ; 
+print "PGP Public Key (required for encrypted email only):\n" ; 
+#if(!empty($member['publickey']) ) { 
+#  include_once("settings.inc") ; 
+#  putenv ( "GNUPGHOME=$gnupghome") ;
+#  $res = gnupg_init();
+#  $GnuPG = new gnupg();
+#  $PublicKey = $GnuPG->import($member['publickey']);  
+#  $PublicKey = $res->import($member['publickey']);  
+#} ; 
+print "<label class=\"field\"><textarea name=publickey style=\"font-size:small;line-height:100%;font-family:monospace;\">$member[publickey]</textarea></label>" ; 
 print "<input type=submit value='Update' class=button>" ; 
 
 
@@ -111,10 +137,10 @@ print "<input type=submit value='Update' class=button>" ;
         $sent = intnff($sent) ; $recv = intnff($recv) ; $members = intnff($members) ; 
         print "<b>$members</b> active members that have sent <b>$sent</b> emails to the list and generated <b>$recv</b> emails, not counting administrative emails.";
         print "</form>" ; 
-        $listpublickey = @file_get_contents('publickey.gpg') ; 
-        print "<h5  class='wrapper' style='max-width: 50rem'>List Public GPG Key</h5><center><pre style='max-width: 50rem; font-size:small;line-height:100%;text-align:left'>" ; 
-        print "$listpublickey" ; 
-        print "</pre></center>" ; 
+#        $listpublickey = @file_get_contents('publickey.gpg') ; 
+#        print "<h5  class='wrapper' style='max-width: 50rem'>List Public GPG Key</h5><center><pre style='max-width: 50rem; font-size:small;line-height:100%;text-align:left'>" ; 
+#        print "$listpublickey" ; 
+#        print "</pre></center>" ; 
         
     };
 }

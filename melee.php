@@ -125,6 +125,13 @@ function leachemails() {
             if (preg_match("/^bounceme$/", strtolower(dt($subject)), $m)) {
                 # a way to debug message formatting, headers, etc.. without affecting the whole list - this includes the contenttype header
                 print "BOUNCEME!!!\n\n";
+                $origcontent = $content ; 
+                if($sender['sign'] == 1 and $sender['encrypt'] == 0) { 
+                    $contenttype = '' ;
+                    $origcontent = gleanemail($mbox,$mid) ;  
+                    $content = signme($origcontent) ; 
+                    $contenttype = '' ; 
+                } 
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
                 #sendemail("$emailfrom", "mike@geeklabs.com", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
                 $send = false;
@@ -153,15 +160,30 @@ function leachemails() {
             }
             if ($send) {
                 print "Sleeping for 5...ctrl-c to abort\n" ; 
-                sleep(8) ; 
+                sleep(5) ; 
                 runsql("update members set sent = sent + 1 where uniq = '$sender[uniq]'"); #increment the sent mail counter
-                $members = gaaafm("select * from members where status = 'active' and level > 0 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+               # if($cleanfrom == 'mike.geeklabz@gmail.com') { #useful for testing things. 
+               #     $members = gaaafm("select * from members where status = 'active' and level > 5 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+               # } else { 
+                    $members = gaaafm("select * from members where status = 'active' and level > 0 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+               # } ; 
                 $storedfrom = $from ; 
+                $cleancontent = gleanemail($mbox,$mid) ;  #only doing this 1 time. Same signature for all signed. 
+                $signedcontent = signme($cleancontent) ; 
                 foreach ($members as $member) {
                     #print "Sending to: $member[email] $member[name]\n" ;
                     #if($cleanfrom == '$member[email]') { $from = $emailfrom ; } else { $from = $storedfrom ; } ; 
-                    runsql("update members set recv = recv + 1 where uniq = '$member[uniq]'"); #increment the recv mail counter
-                    sendemail("$from", "$member[email]", "$subject", $contenttype, $optheaders, $content);
+                     runsql("update members set recv = recv + 1 where uniq = '$member[uniq]'"); #increment the recv mail counter
+                     if($member['sign'] == '1' and $member['encrypt'] == '0') { 
+                        sendemail("$from", "$member[email]", "$subject", '', $optheaders, $signedcontent);
+                     } elseif($member['encrypt'] == '1') { 
+                        #add keys and encrypt goes here. 
+                        print "Encrypting\n" ;
+                        $encryptcontent = encryptme($cleancontent,$member['publickey']) ; 
+                        sendemail("$from", "$member[email]", "$subject", '', $optheaders, $encryptcontent);
+                     } else { 
+                        sendemail("$from", "$member[email]", "$subject", $contenttype, $optheaders, $content);
+                     } ;    
                 };
             };
             imap_delete($mbox, $mid);
@@ -197,26 +219,120 @@ function leachemails() {
     sleep(1) ; 
 
 };
-
-
 function signme($content) { 
 #-------------------
 #https://www.php.net/manual/en/ref.gnupg.php
-#very experimental. Messes up mime.. 
+#very experimental.
 include("settings.inc") ; 
 if(!empty($gnupghome) and !empty($fingerprint)) { 
     putenv ( "GNUPGHOME=$gnupghome") ;
     $res = gnupg_init();
     gnupg_addsignkey($res,"$fingerprint",""); #list gpg fingerpint
     $signed = gnupg_sign($res, "$content");
-    echo $signed ;
     $content = $signed ; 
-    $contenttype = '' ; 
 } ; 
 #-------------------
 return $content ; 
 } ; 
+function encryptme($content,$memberpublickey) { 
+    include("settings.inc") ; 
+    putenv ("GNUPGHOME=$gnupghome") ;
+    $res = gnupg_init();
+    print "List fingerprint: $fingerprint \n" ; 
+    gnupg_addencryptkey($res,$fingerprint); #list fingerpint - should already be in gpg keyring
+    gnupg_addsignkey($res,$fingerprint,""); #list fingerpint
+    $keydata = gnupg_import($res,$memberpublickey); #import members publickey 
+#    print_r($keydata); #useful when debugging
+    if(empty($keydata['fingerprint'])) { 
+        $signed = gnupg_sign($res, $content);
+        $signed .= "\n\nSIGNED ONLY: You requested encrypted, but there seems to be an issue with your public key\n Make sure it has all of the ---'s at top and bottom.\n\n" ; 
+        return $signed ; 
+    } else {  
+        gnupg_addencryptkey($res,$keydata['fingerprint']) ; #data from importing key. 
+        $encrypted = gnupg_encryptsign($res,$content);
+        return $encrypted ; 
+    } ; 
+} ; 
 
+
+function gleanemail($mbox,$mid) { 
+#there is some extra stuff here, used elsewhere as well. cut and paste code that mostly works 
+#strip MIME email to plain text if possible. Removes attachements. 
+            $mailrawheader = imap_fetchbody($mbox, $mid, "0");
+            $mailraw = imap_fetchbody($mbox, $mid, "");
+            $someheaderinfo = imap_headerinfo($mbox, $mid);
+            $size = $someheaderinfo->Size;
+            list($hjunk, $mailrawbody) = preg_split("/\n\r/", $mailraw, 2);
+            $headers = parse_rfc822_headers($mailrawheader); #cause I want ALL the headers.
+            # $contenttype = $headers['Content-Type'];
+            $optheaders = array($headers['References']);
+            $from = $headers['From'];
+            $to = $headers['To'];
+            $subject = $headers['Subject'];
+            #this will evolve:
+            $content = $mailrawbody;
+            if (base64_decode($mailrawbody, true)) {
+                $content = base64_decode($content, true);
+            };
+            preg_match_all("/[\._a-zA-Z0-9-]+@[\._a-zA-Z0-9-]+/i", $from, $m); #borrowed, may not be great.
+            $cleanfrom = strtolower(dtemail($m[0][0]));
+            #now to decode the body, MIME and all.
+            $struct = imap_fetchstructure($mbox, $mid);
+            $parts = $struct->parts;
+            $i = 0;
+            if (!$parts) { /* Simple message, only 1 piece */
+                $attachment = array(); /* No attachments */
+                $content = imap_body($mbox, $mid);
+                if (base64_decode($content, true)) {
+                    $content = base64_decode($content, true);
+                };
+            } else { /* Complicated message, multiple parts */
+                $endwhile = false;
+                $stack = array(); /* Stack while parsing message */
+                $content = ""; /* Content of message */
+                $attachment = array(); /* Attachments */
+                while (!$endwhile) {
+                    if (!$parts[$i]) {
+                        if (count($stack) > 0) {
+                            $parts = $stack[count($stack) - 1]["p"];
+                            $i = $stack[count($stack) - 1]["i"] + 1;
+                            array_pop($stack);
+                        } else {
+                            $endwhile = true;
+                        }
+                    }
+                    if (!$endwhile) {
+                        /* Create message part first (example '1.2.3') */
+                        $partstring = "";
+                        foreach ($stack as $s) {
+                            $partstring.= ($s["i"] + 1) . ".";
+                        }
+                        $partstring.= ($i + 1);
+                        if (strtoupper($parts[$i]->disposition) == "ATTACHMENT") {
+                            /*Attachment */
+                            #                $attachment[] = array("filename" => $parts[$i]->parameters[0]->value,"filedata" => imap_fetchbody($mbox,$mid, $partstring));
+                            $filename = $parts[$i]->parameters[0]->value;
+                            $content.= "\n[attachment: $filename] \n"; #just so you know there was one...
+                        } elseif (strtoupper($parts[$i]->subtype) == "PLAIN") {
+                            /*Message */
+                            $content.= imap_fetchbody($mbox, $mid, $partstring);
+                        }
+                    }
+                    if ($parts[$i]->parts) {
+                        $stack[] = array("p" => $parts, "i" => $i);
+                        $parts = $parts[$i]->parts;
+                        $i = 0;
+                    } else {
+                        $i++;
+                    }
+                } /* while */
+            } /* complicated message */
+            if (base64_decode($content, true)) {
+                $content = base64_decode($content, true);
+            };
+
+return $content ; 
+} ; 
 
 function parse_rfc822_headers(string $header_string):
     array {

@@ -39,6 +39,7 @@ CREATE TABLE `members` (
   `hush` int(1) DEFAULT 0,
   `sign` int(1) DEFAULT 0,
   `encrypt` int(1) DEFAULT 0,
+  `plain` int(1) DEFAULT 0,
   PRIMARY KEY (`uniq`),
   UNIQUE KEY `email` (`email`),
   KEY `name` (`name`) USING BTREE
