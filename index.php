@@ -71,7 +71,7 @@ EOF;
         include ("melee.html");
     };
     if (($mode == 'login' or $submode == 'login') and $level > 1) {
-        $member = gaafm("select uniq as Member,email as Email, name as Name,created,level,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt from members where uniq = '$uniq' limit 1");
+        $member = gaafm("select uniq as Member,email as Email, name as Name,created,level,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt,fingerprint from members where uniq = '$uniq' limit 1");
         print '<section class=wrapper class="wrapper -wide ta-center">' ; 
         print "<a href='$webroot/' class='button -outlined -block'>MELEE Home</A>" ; 
         print "</section>"  ; 
@@ -81,9 +81,7 @@ if($subsubmode == 'update' or $submode == 'update') {
   runsql("update members set name = '$name' where uniq = '$member[Member]'") ; 
   $name = dt($_REQUEST['name']) ; #not real efficient, but sure is easy to debug/extend ;)
   runsql("update members set name = '$name' where uniq = '$member[Member]'") ; 
-#  $publickey = dtless($_REQUEST['publickey']) ;
-  $publickey = $_REQUEST['publickey'] ; #dangerous
-  
+  $publickey = dtless($_REQUEST['publickey']) ; #dangerous
   runsql("update members set publickey = '$publickey' where uniq = '$member[Member]'") ; 
   if($_REQUEST['gpgmode'] == 'sign') { 
     runsql("update members set sign = '1', encrypt='0' where uniq = '$member[Member]'") ; 
@@ -98,7 +96,7 @@ if($subsubmode == 'update' or $submode == 'update') {
   } else { 
     runsql("update members set digest = '0' where uniq = '$member[Member]'") ; 
   } ;   
-  $member = gaafm("select uniq as Member,email as Email, name as Name, created,level,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt from members where uniq = '$uniq' limit 1");
+  $member = gaafm("select uniq as Member,email as Email, name as Name, created,level,status as Status,digest,recv,sent,bounced,asshole,hush,publickey,sign,encrypt,fingerprint from members where uniq = '$uniq' limit 1");
 } ; 
 
 #css used is cutestrap. 
@@ -120,6 +118,7 @@ print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" valu
 if($member['encrypt'] > 0 ) { $CHECKED = 'CHECKED' ; } else { $CHECKED = '' ; } ;  
 print "<label class=\"field\"><input name=gpgmode id=gpgmode type=\"radio\" value=encrypt $CHECKED/><span class=\"label\">GPG/PGP encrypt my email (plain text version only)</span></label>" ; 
 print "PGP Public Key (required for encrypted email only):\n" ; 
+if(!empty($member['fingerprint'])) { print "<br><span style='font-size:small;color:#666666;'>Fingerprint: $member[fingerprint] (updated on use)</span>" ; } ; 
 #if(!empty($member['publickey']) ) { 
 #  include_once("settings.inc") ; 
 #  putenv ( "GNUPGHOME=$gnupghome") ;
@@ -144,5 +143,6 @@ print "<input type=submit value='Update' class=button>" ;
         
     };
 }
+
 main();
 ?>
