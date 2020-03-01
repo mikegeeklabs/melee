@@ -30,6 +30,7 @@ CREATE TABLE `members` (
   `created` timestamp NOT NULL DEFAULT '1971-01-01 00:00:00',
   `lastmod` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `publickey` text DEFAULT NULL,
+  `fingerprint` varchar(100) default '',
   `status` varchar(10) DEFAULT 'active',
   `digest` int(1) DEFAULT 0,
   `asshole` int(1) DEFAULT 0,

@@ -1,5 +1,10 @@
 <?php
 function leachemails() {
+#main MELEE everything in 1 script. 
+#handles PGP in some cases. Good enough for casual use. Be wary of webmail PGP implementations. 
+#Needs a properly setup mail server and GPG for the list. 
+#version 0.42b - Working well enough in my cases..  --meuon--
+#
     global $db, $lang, $thousands, $decimals;
     include ('settings.inc');
     $db = glconnect();
@@ -125,43 +130,38 @@ function leachemails() {
             if (preg_match("/^bounceme$/", strtolower(dt($subject)), $m)) {
                 # a way to debug message formatting, headers, etc.. without affecting the whole list - this includes the contenttype header
                 print "BOUNCEME!!!\n";
+                #-------
                 $origcontent = $content;
-                #determine if GPG/PGP Signed or Encrypted and if so, decrypt. 
-                if (preg_match("/PGP SIGNED MESSAGE/",$origcontent,$m) 
-                or preg_match("/PGP MESSAGE/",$origcontent,$m)   ) { #looks like a PGP message?
+                #determine if GPG/PGP Signed or Encrypted and if so, decrypt.
+                if (preg_match("/PGP SIGNED MESSAGE/", $origcontent, $m) or preg_match("/PGP MESSAGE/", $origcontent, $m)) { #looks like a PGP message?
                     include ("settings.inc");
                     putenv("GNUPGHOME=$gnupghome");
                     $res = gnupg_init();
-                    $plaintext = '' ; 
-                    $msginfos = gnupg_verify($res,$origcontent,false,$plaintext);
-                    $senderfingerprint = makefingerprint("$cleanfrom") ; 
-                    $matchsender = false ; 
-                    foreach($msginfos as $msginfo) { 
-                        if($msginfo['fingerprint'] == $senderfingerprint) { 
-                            $matchsender = true ; 
-                            print $msginfo['fingerprint'] ." matched!\n\n" ; 
-                            gnupg_adddecryptkey($res,"$senderfingerprint","");
-                            gnupg_adddecryptkey($res,"$fingerprint","");
-
-                        } ; 
-                    } ; 
-                    if($matchsender) { 
-                           $content = $plaintext ; 
-                           $content .= "\n=====\n$listname VERIFIES $cleanfrom as the original sender\nFingerprint: $senderfingerprint\n=====\n" ; 
-                    } else { 
-                           $content .= "\n=====\n$listname COULD NOT VERIFY $cleanfrom as the sender of this content\n=====\n" ; 
-                    } ; 
-                } ; 
-               print $content ; 
-#               die ;     
-#                if ($sender['sign'] == 1 and $sender['encrypt'] == 0) {
-                    $contenttype = '';
-                    #$origcontent = gleanemail($mbox, $mid);
-                    $content = signme($content);
-                    $contenttype = '';
-#                }
+                    $plaintext = '';
+                    $msginfos = gnupg_verify($res, $origcontent, false, $plaintext);
+                    $senderfingerprint = makefingerprint("$cleanfrom");
+                    $matchsender = false;
+                    foreach ($msginfos as $msginfo) {
+                        if ($msginfo['fingerprint'] == $senderfingerprint) {
+                            $matchsender = true;
+                            print $msginfo['fingerprint'] . " matched!\n\n";
+                            gnupg_adddecryptkey($res, "$senderfingerprint", "");
+                            gnupg_adddecryptkey($res, "$fingerprint", "");
+                        };
+                    };
+                    if ($matchsender) {
+                        $content = $plaintext;
+                        $content.= "\n=====\n$listname VERIFIES $cleanfrom as the original sender\nFingerprint: $senderfingerprint\n=====\n";
+                    } else {
+                        $content.= "\n=====\n$listname COULD NOT VERIFY $cleanfrom as the sender of this content\n=====\n";
+                    };
+                };
+                #--------
+                print $content;
+                $contenttype = '';
+                $content = signme($content);
+                $contenttype = '';
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
-                #sendemail("$emailfrom", "mike@geeklabs.com", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
                 $send = false;
             };
             if (preg_match("/^help$/", strtolower(dt($subject)), $m)) {
@@ -187,20 +187,48 @@ function leachemails() {
                 $subject = "[$listname] " . $subject . "\n";
             }
             if ($send) {
-                print "Sleeping for 5...ctrl-c to abort\n";
+                $cleancontent = gleanemail($mbox, $mid); #only doing this 1 time. Same signature for all signed.
+                $origcontent = $content;
+                #determine if GPG/PGP Signed or Encrypted and if so, decrypt.
+                if (preg_match("/PGP SIGNED MESSAGE/", $origcontent, $m) or preg_match("/PGP MESSAGE/", $origcontent, $m)) { #looks like a PGP message?
+                    include ("settings.inc");
+                    putenv("GNUPGHOME=$gnupghome");
+                    $res = gnupg_init();
+                    $plaintext = '';
+                    $msginfos = gnupg_verify($res, $origcontent, false, $plaintext);
+                    $senderfingerprint = makefingerprint("$cleanfrom");
+                    $matchsender = false;
+                    foreach ($msginfos as $msginfo) {
+                        if ($msginfo['fingerprint'] == $senderfingerprint) {
+                            $matchsender = true;
+                            print $msginfo['fingerprint'] . " matched!\n\n";
+                            gnupg_adddecryptkey($res, "$senderfingerprint", "");
+                            gnupg_adddecryptkey($res, "$fingerprint", "");
+                        };
+                    };
+                    if ($matchsender) {
+                        $cleancontent = $plaintext ;
+                        $content = $plaintext ; 
+                        $cleancontent.= "\n=====\n| $listname VERIFIES $cleanfrom as sender and valid content\n| Fingerprint: $senderfingerprint\n=====\n";
+                        $content.= "\n=====\n| $listname VERIFIES $cleanfrom as sender and valid content\n| Fingerprint: $senderfingerprint\n=====\n";
+                    } else {
+                        $content.= "\n=====\n| $listname COULD NOT VERIFY $cleanfrom as the sender nor content validity\n=====\n";
+                    };
+                };
+                #--------
+                $signedcontent = signme($cleancontent);
+               # if ($cleanfrom == 'mike.geeklabs@gmail.com') { #useful for testing things.
+               #     $members = gaaafm("select * from members where status = 'active' and level > 5 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+               # } else {
+                    $members = gaaafm("select * from members where status = 'active' and level > 0 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
+               # };
+                $C = count($members);
+                print "Sleeping for 5...before sending to $C members.      ctrl-c to abort\n";
                 sleep(5);
                 runsql("update members set sent = sent + 1 where uniq = '$sender[uniq]'"); #increment the sent mail counter
-                # if($cleanfrom == 'mike.geeklabz@gmail.com') { #useful for testing things.
-                #     $members = gaaafm("select * from members where status = 'active' and level > 5 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
-                # } else {
-                $members = gaaafm("select * from members where status = 'active' and level > 0 and digest < 1 and bounced < 3 and uniq != '$sender[uniq]' order by email,uniq");
-                # } ;
-                $storedfrom = $from;
-                $cleancontent = gleanemail($mbox, $mid); #only doing this 1 time. Same signature for all signed.
-                $signedcontent = signme($cleancontent);
+                #================
                 foreach ($members as $member) {
                     #print "Sending to: $member[email] $member[name]\n" ;
-                    #if($cleanfrom == '$member[email]') { $from = $emailfrom ; } else { $from = $storedfrom ; } ;
                     runsql("update members set recv = recv + 1 where uniq = '$member[uniq]'"); #increment the recv mail counter
                     if ($member['sign'] == '1' and $member['encrypt'] == '0') {
                         sendemail("$from", "$member[email]", "$subject", '', $optheaders, $signedcontent);
@@ -247,9 +275,7 @@ function leachemails() {
     sleep(1);
 };
 function signme($content) {
-    #-------------------
     #https://www.php.net/manual/en/ref.gnupg.php
-    #very experimental.
     include ("settings.inc");
     if (!empty($gnupghome) and !empty($fingerprint)) {
         putenv("GNUPGHOME=$gnupghome");
@@ -258,7 +284,6 @@ function signme($content) {
         $signed = gnupg_sign($res, "$content");
         $content = $signed;
     };
-    #-------------------
     return $content;
 };
 function encryptme($content, $memberpublickey) {
@@ -280,30 +305,25 @@ function encryptme($content, $memberpublickey) {
         return $encrypted;
     };
 };
-
-function makefingerprint($cleanemail) { 
-    global $db ; 
-    print "Making fingerpint to compare for $cleanemail\n" ; 
-    list($uniq,$publickey,$fingerprint) = gafm("select uniq,publickey,fingerprint from members where email = '$cleanemail' limit 1") ; 
-    if(!empty($uniq)) { 
-    include ("settings.inc");
-    putenv("GNUPGHOME=$gnupghome");
-    $res = gnupg_init();
-    $info = gnupg_import($res,$publickey);
+function makefingerprint($cleanemail) {
+    global $db;
+    print "Making fingerpint to compare for $cleanemail\n";
+    list($uniq, $publickey, $fingerprint) = gafm("select uniq,publickey,fingerprint from members where email = '$cleanemail' limit 1");
+    if (!empty($uniq)) {
+        include ("settings.inc");
+        putenv("GNUPGHOME=$gnupghome");
+        $res = gnupg_init();
+        $info = gnupg_import($res, $publickey);
         #print_r($info);
-        if(!empty($info['fingerprint']) and $info['fingerprint'] != $fingerprint) { 
-            print "Update Fingerprint for $uniq $cleanemail $info[fingerprint]\n" ; 
-            runsql("update members set fingerprint = '$info[fingerprint]' where uniq = '$uniq'") ; 
-        } ; 
-        return $info['fingerprint'] ; 
-    } else { 
-        return '' ;     
-    } ; 
-    
-} ; 
-
-
-
+        if (!empty($info['fingerprint']) and $info['fingerprint'] != $fingerprint) {
+            print "Update Fingerprint for $uniq $cleanemail $info[fingerprint]\n";
+            runsql("update members set fingerprint = '$info[fingerprint]' where uniq = '$uniq'");
+        };
+        return $info['fingerprint'];
+    } else {
+        return '';
+    };
+};
 function gleanemail($mbox, $mid) {
     #there is some extra stuff here, used elsewhere as well. cut and paste code that mostly works
     #strip MIME email to plain text if possible. Removes attachements.
@@ -409,49 +429,49 @@ function fortune() {
     $fortune = "\n\nYour Fortune:\n\n$fortune";
     return $fortune;
 };
-
-#borrowed code: not my style but works. 
-    function parse_rfc822_headers(string $header_string):
+#borrowed code: not my style but works.
+function parse_rfc822_headers(string $header_string):
     array {
         preg_match_all('/([^:\s]+): (.*?(?:\r\n\s(?:.+?))*)\r\n/m', $header_string, $matches);
         $headers = array_combine_groupkeys($matches[1], $matches[2]);
         return $headers;
-    } ; 
+    };
     function array_combine_groupkeys(array $keys, array $values):
-    array {
-        $result = [];
-          foreach ($keys as $i => $k) { $result[$k][] = $values[$i];}
+        array {
+            $result = [];
+            foreach ($keys as $i => $k) {
+                $result[$k][] = $values[$i];
+            }
             array_walk($result, function (&$v) {
                 $v = (count($v) === 1) ? array_pop($v) : $v;
             });
             return $result;
-    } ; 
+        };
+
 
 
 
 
 
 #=================================
-#Makes sure this only runs via CLI.
-#example crontab entry: 
-#*/5 *	* * *	root	cd /home/domains/chugalug.org/website/melee ; /usr/bin/php /home/domains/chugalug.org/website/melee/melee.php >/tmp/melee.log
-include("settings.inc") ; 
-(PHP_SAPI !== 'cli' || isset($_SERVER['HTTP_USER_AGENT'])) && die('not for you');
-#Tries to make sure that only 1 of these
-$lockfile = sys_get_temp_dir() . '/melee.$database.lock';
-$pid = @file_get_contents($lockfile);
-if (posix_getsid($pid) === false or empty($pid)) {
-    print "Life Locking Melee!\n";
-    file_put_contents($lockfile, getmypid()); // create lockfile
-} else {
-    print "Melee can only run once. If you run multiple lists, change the lockfile per list\n";
-    exit;
-} ; 
-
-error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
-include ("glass-core.php");
-include ("sendemail.php");
-leachemails(); 
-
-#makefingerprint("mike.geeklabs@gmail.com") ; 
+        #Makes sure this only runs via CLI.
+        #example crontab entry:
+        #*/5 *	* * *	root	cd /home/domains/chugalug.org/website/melee ; /usr/bin/php /home/domains/chugalug.org/website/melee/melee.php >/tmp/melee.log
+        include ("settings.inc");
+        (PHP_SAPI !== 'cli' || isset($_SERVER['HTTP_USER_AGENT'])) && die('not for you');
+        #Tries to make sure that only 1 of these
+        $lockfile = sys_get_temp_dir() . "/melee.$database.lock";
+        $pid = @file_get_contents($lockfile);
+        if (posix_getsid($pid) === false or empty($pid)) {
+            print "Life Locking Melee!\n";
+            file_put_contents($lockfile, getmypid()); // create lockfile
+        } else {
+            print "Melee can only run once. If you run multiple lists, change the lockfile per list\n";
+            exit;
+        };
+        error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
+        include ("glass-core.php");
+        include ("sendemail.php");
+        leachemails();
+        
 ?>
