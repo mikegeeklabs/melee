@@ -124,14 +124,42 @@ function leachemails() {
             };
             if (preg_match("/^bounceme$/", strtolower(dt($subject)), $m)) {
                 # a way to debug message formatting, headers, etc.. without affecting the whole list - this includes the contenttype header
-                print "BOUNCEME!!!\n\n";
+                print "BOUNCEME!!!\n";
                 $origcontent = $content;
-                if ($sender['sign'] == 1 and $sender['encrypt'] == 0) {
+                #determine if GPG/PGP Signed or Encrypted and if so, decrypt. 
+                if (preg_match("/PGP SIGNED MESSAGE/",$origcontent,$m) 
+                or preg_match("/PGP MESSAGE/",$origcontent,$m)   ) { #looks like a PGP message?
+                    include ("settings.inc");
+                    putenv("GNUPGHOME=$gnupghome");
+                    $res = gnupg_init();
+                    $plaintext = '' ; 
+                    $msginfos = gnupg_verify($res,$origcontent,false,$plaintext);
+                    $senderfingerprint = makefingerprint("$cleanfrom") ; 
+                    $matchsender = false ; 
+                    foreach($msginfos as $msginfo) { 
+                        if($msginfo['fingerprint'] == $senderfingerprint) { 
+                            $matchsender = true ; 
+                            print $msginfo['fingerprint'] ." matched!\n\n" ; 
+                            gnupg_adddecryptkey($res,"$senderfingerprint","");
+                            gnupg_adddecryptkey($res,"$fingerprint","");
+
+                        } ; 
+                    } ; 
+                    if($matchsender) { 
+                           $content = $plaintext ; 
+                           $content .= "\n=====\n$listname VERIFIES $cleanfrom as the original sender\nFingerprint: $senderfingerprint\n=====\n" ; 
+                    } else { 
+                           $content .= "\n=====\n$listname COULD NOT VERIFY $cleanfrom as the sender of this content\n=====\n" ; 
+                    } ; 
+                } ; 
+               print $content ; 
+#               die ;     
+#                if ($sender['sign'] == 1 and $sender['encrypt'] == 0) {
                     $contenttype = '';
-                    $origcontent = gleanemail($mbox, $mid);
-                    $content = signme($origcontent);
+                    #$origcontent = gleanemail($mbox, $mid);
+                    $content = signme($content);
                     $contenttype = '';
-                }
+#                }
                 sendemail("$emailfrom", "$cleanfrom", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
                 #sendemail("$emailfrom", "mike@geeklabs.com", "[$listname]  Bounce Test", $contenttype, $optheaders, $content);
                 $send = false;
@@ -252,6 +280,30 @@ function encryptme($content, $memberpublickey) {
         return $encrypted;
     };
 };
+
+function makefingerprint($cleanemail) { 
+    global $db ; 
+    print "Making fingerpint to compare for $cleanemail\n" ; 
+    list($uniq,$publickey,$fingerprint) = gafm("select uniq,publickey,fingerprint from members where email = '$cleanemail' limit 1") ; 
+    if(!empty($uniq)) { 
+    include ("settings.inc");
+    putenv("GNUPGHOME=$gnupghome");
+    $res = gnupg_init();
+    $info = gnupg_import($res,$publickey);
+        #print_r($info);
+        if(!empty($info['fingerprint']) and $info['fingerprint'] != $fingerprint) { 
+            print "Update Fingerprint for $uniq $cleanemail $info[fingerprint]\n" ; 
+            runsql("update members set fingerprint = '$info[fingerprint]' where uniq = '$uniq'") ; 
+        } ; 
+        return $info['fingerprint'] ; 
+    } else { 
+        return '' ;     
+    } ; 
+    
+} ; 
+
+
+
 function gleanemail($mbox, $mid) {
     #there is some extra stuff here, used elsewhere as well. cut and paste code that mostly works
     #strip MIME email to plain text if possible. Removes attachements.
@@ -358,7 +410,7 @@ function fortune() {
     return $fortune;
 };
 
-#borrowed code: 
+#borrowed code: not my style but works. 
     function parse_rfc822_headers(string $header_string):
     array {
         preg_match_all('/([^:\s]+): (.*?(?:\r\n\s(?:.+?))*)\r\n/m', $header_string, $matches);
@@ -400,4 +452,6 @@ error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
 include ("glass-core.php");
 include ("sendemail.php");
 leachemails(); 
+
+#makefingerprint("mike.geeklabs@gmail.com") ; 
 ?>
