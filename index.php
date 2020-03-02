@@ -1,5 +1,6 @@
 <?php
 #as minimal and functional of a web interface for MELEE users as I could create.
+#https://github.com/mikegeeklabs/melee
 function main() {
     global $db, $login, $mode, $submode, $subsubmode, $action, $subaction, $uniq, $thousands, $decimals ;
     #  ini_set('display_errors',1);
